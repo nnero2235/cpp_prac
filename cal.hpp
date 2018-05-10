@@ -14,6 +14,9 @@ namespace Cal{
             result(result),
             msg(msg)
         {};
+        CalResult(int code):
+            code(code)
+        {}
         CalResult(double result):
             result(result)
         {};
@@ -36,15 +39,17 @@ namespace Cal{
             MULTI,
             LEFT_PARENTH,
             RIGHT_PARENTH,
+            VALUE,
             UNKNOW
         };
-        Elem(double value,EType type):
-            value(value),
+        Elem(char c,EType type):
+            c(c),
             type(type)
         {}
-        std::unique_ptr<Elem> parseElem(const std::string& symbol);
+        static std::unique_ptr<Elem> parseElem(const char& c);
         friend class Calculator;
     private:
+        char c{'\0'};
         double value{0};
         EType type{EType::UNKNOW};
     };
@@ -52,7 +57,9 @@ namespace Cal{
     //calculate expr and return CalResult
     class Calculator{
     public:
-        CalResult& parseAndCalculate(const std::string& expr);
+        Calculator() = default;
+        std::unique_ptr<CalResult> parse(const std::string& expr);
+        CalResult& calculate();
     private:
         std::stack<Elem> elem_stack;
     };
