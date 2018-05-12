@@ -58,10 +58,16 @@ namespace Cal{
     class Calculator{
     public:
         Calculator() = default;
-        std::unique_ptr<CalResult> parse(const std::string& expr);
-        CalResult& calculate();
+        std::unique_ptr<CalResult> eval(const std::string& expr);
     private:
+        void bufNumber(const char& c);
+        void evalStack();
+        void evalNumber();
+        double evalOpt(const Elem& left,const Elem& opt,const Elem& right);
+        void clearStack();
         std::stack<Elem> elem_stack;
+        char numberBuf[64]{'\0'};
+        size_t index{0};
     };
 }
 
