@@ -34,8 +34,7 @@ public:
         char buf[1024];
         ::strncpy(buf, "how are you!", 1024);
         ::write(sock_fd,buf,1024);
-        ::read(sock_fd,buf,1024);
-        ::pause();
+        ::close(sock_fd);
     }
 private:
     std::string host{"127.0.0.1"};
