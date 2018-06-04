@@ -6,10 +6,23 @@
 #include<sys/socket.h>
 #include<unistd.h>
 #include<string>
+#include<fcntl.h>
+#include<nnero/common.hpp>
+#include<vector>
+
+using namespace nnero;
 
 constexpr unsigned int PORT = 8080;
 constexpr unsigned int EPOLL_MAX_EVENTS = 100;
 constexpr unsigned int BUF_MAX = 1024;
+std::vector<int> conn_fds;
+
+/*set non block fd*/
+void setNonBlock(int fd){
+    int flags = ::fcntl(fd,F_GETFL,0);
+    flags |= O_NONBLOCK;
+    ::fcntl(fd,F_SETFL, flags);
+}
 
 /* bind port to listen*/
 int bind_socket(int port){
@@ -63,27 +76,49 @@ void modify_epoll_event(int epoll_fd,int fd,int state){
 
 void accept_socket(int epoll_fd,int listen_fd){
     struct ::sockaddr_in client_addr;
-    ::socklen_t client_len;
+    ::socklen_t client_len = sizeof(struct ::sockaddr_in);
     int client_fd = ::accept(listen_fd, (struct ::sockaddr*)&client_addr, &client_len);
     if(client_fd == -1){
         std::cout<<"accept error\n";
     } else {
-        std::cout<<"connect client:ip->"<<::inet_ntoa(client_addr.sin_addr)<<" port->"<<client_addr.sin_port<<'\n';
+        char* ip = ::inet_ntoa(client_addr.sin_addr);
+        std::cout<<"connect client:ip->"<<ip<<" port->"<<client_addr.sin_port<<'\n';
+        setNonBlock(client_fd);
+        std::string wel_msg{"welcome "};
+        wel_msg += ip;
+        wel_msg += "\n";
+        conn_fds.push_back(client_fd);
         add_epoll_event(epoll_fd,client_fd,::EPOLLIN);
+        for(int fd : conn_fds){
+            ::write(fd,wel_msg.c_str(),wel_msg.length());
+        }
     }
 }
 
 void read_socket(int epoll_fd,int fd,char* buf){
-    auto len = ::read(fd,buf,BUF_MAX);
-    if(len == -1){
-        std::cout<<"client close.\n";
-        delete_epoll_event(epoll_fd,fd,::EPOLLIN);
-    } else if(len == 0){
-        std::cout<<"client shutdown.\n";
-        delete_epoll_event(epoll_fd,fd,::EPOLLIN);
-    } else {
-        std::cout<<"Message:"<<buf<<'\n';
-        modify_epoll_event(epoll_fd,fd,::EPOLLOUT);
+    while(true){
+        auto len = ::read(fd,buf,BUF_MAX);
+        if(len == -1){
+            std::cout<<"client close.\n";
+            delete_epoll_event(epoll_fd,fd,::EPOLLIN);
+            break;
+        } else if(len == 0){
+            std::cout<<"client shutdown.\n";
+            delete_epoll_event(epoll_fd,fd,::EPOLLIN);
+            break;
+        } else {
+            for(int fd : conn_fds){
+                ::write(fd,buf,len);
+            }
+            if(len <= BUF_MAX){
+                continue;
+            } else {
+                for(int fd : conn_fds){
+                    ::write(fd,"\n",1);
+                }
+                break;
+            }
+        }    
     }
 }
 
@@ -105,7 +140,6 @@ void handle_events(int epoll_fd,struct ::epoll_event *events,int nfds,int listen
         if((fd == listen_fd) && (events[i].events & ::EPOLLIN)){
             accept_socket(epoll_fd,listen_fd);
         } else if(events[i].events & ::EPOLLIN){
-            std::memset(buf, 0, BUF_MAX);
             read_socket(epoll_fd,events[i].data.fd,buf);
         } else if(events[i].events & ::EPOLLOUT){
             std::memset(buf, 0, BUF_MAX);
@@ -119,7 +153,7 @@ void handle_events(int epoll_fd,struct ::epoll_event *events,int nfds,int listen
 void epoll_run(int listen_fd){
     int epoll_fd = ::epoll_create1(0);
     if(epoll_fd == -1){
-        std::cout<<"error epoll create"<<'\n';
+        INFO("error epoll create");
         ::exit(0);
     }
     add_epoll_event(epoll_fd,listen_fd,::EPOLLIN);
@@ -138,11 +172,13 @@ void epoll_run(int listen_fd){
     ::close(epoll_fd);
 }
 
+
 int main(){
-    std::cout<<"server start..\n";
+    INFO("server start!");
     //bind a port to listen
     int listen_fd = bind_socket(PORT);
     ::listen(listen_fd,0);
+    INFO("bind and listen ON:"+std::to_string(PORT));
     epoll_run(listen_fd);
     return 0;
 }
