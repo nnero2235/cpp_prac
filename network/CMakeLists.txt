@@ -8,5 +8,6 @@ project (network)
 include_directories(/home/nnero/project/cplusplus/cpp_prac)
 
 #execute file
-add_executable(epoll_server epoll.cpp)
-add_executable(client socket_client.cpp)
+#add_executable(epoll_server epoll.cpp)
+#add_executable(client socket_client.cpp)
+add_executable(log log.cpp)
