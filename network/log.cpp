@@ -1,10 +1,16 @@
-#include<nnero/common.hpp>
-
-using namespace nnero::logger;
+#include <memory>
+#include <iostream>
+#include <iomanip>
+#include <thread>
+#include <fstream>
+#include <sstream>
 
 int main(){
-    LOG(INFO)<<"hello"<<9<<'\n';
-    LOG(WARN)<<"hello"<<10.8<<'\n';
-    LOG(ERROR)<<"hello"<<'c'<<'\n';
+    std::ostringstream ostr;
+    ostr<<"like"<<":"<<1<<1.2<<"I like %s aha"<<"i"<<'\n';
+    std::ofstream ofs;
+    //ofs.open("/home/nnero/project/cplusplus/cpp_prac/network/p.log", std::ios_base::app);
+    //ofs<<ostr.str();
+    std::cout<<ostr.str();
     return 0;
 }
