@@ -28,6 +28,12 @@ namespace nnero{
             BOTH
         };
 
+        enum LOG_RATIO{
+            SECOND,
+            MILLI,
+            MIRCO
+        };
+
         class Log;
         class LogConfig;
 
@@ -35,11 +41,12 @@ namespace nnero{
             friend Log;
         public:
             LogConfig(const std::string& log_path,const std::string& log_name,
-                      const LOG_MODE log_mode,const LOG_LEVEL log_level):
+                      const LOG_MODE log_mode,const LOG_LEVEL log_level,const LOG_RATIO log_ratio):
                 m_log_path{log_path},
                 m_log_name{log_name},
                 m_log_mode{log_mode},
-                m_log_level{log_level}
+                m_log_level{log_level},
+                m_log_ratio{log_ratio}
             {}
             LogConfig(const LogConfig&) = delete;
             LogConfig& operator=(const LogConfig&) = delete;
@@ -48,6 +55,7 @@ namespace nnero{
             std::string m_log_name;
             LOG_MODE m_log_mode;
             LOG_LEVEL m_log_level;
+            LOG_RATIO m_log_ratio;
         };
 
         class Log{
@@ -91,7 +99,7 @@ namespace nnero{
               log.level=info
               log.mode=all
         */
-        extern void logInit();
+        extern void logInit(std::string file_path);
         
         /*for outside use*/
 #define LOG(level) if(level >= s_level)                        \

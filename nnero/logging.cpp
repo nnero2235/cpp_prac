@@ -5,6 +5,7 @@
 #include<fstream>
 #include<sstream>
 #include<memory>
+#include<unistd.h>
 
 using namespace nnero::logging;
 
@@ -14,32 +15,34 @@ namespace nnero{
         LOG_LEVEL s_level{LOG_LEVEL::INFO};
 
         void logInit(const std::string& log_path,const std::string& log_name,
-                     const LOG_MODE log_mode,const LOG_LEVEL log_level){
-            s_config_ptr.reset(new LogConfig(log_path,log_name,log_mode,log_level));
+                     const LOG_MODE log_mode,const LOG_LEVEL log_level,const LOG_RATIO log_ratio){
+            s_config_ptr.reset(new LogConfig(log_path,log_name,log_mode,log_level,log_ratio));
             s_level = log_level;
         }
 
-        void logInit(){
-            std::ifstream ifs("log_config.properties", std::ios_base::in);
+        void logInit(std::string file_path){
+            std::ifstream ifs(file_path);
             if(ifs.is_open()){
                 std::string line;
                 std::map<std::string,std::string> config_map;
                 while(!ifs.eof()){
                     ifs >> line;
-                    auto pos = line.find("=", 0, line.length());
+                    auto pos = line.find("=");
                     if(pos != std::string::npos){
                         std::string name = line.substr(0, pos);
                         std::string value = line.substr(pos+1, line.length());
                         config_map[name]=value;
                     } else {
-                        std::cerr<<"config is broken.\n";
+                        std::cerr<<"config is broken. line is:"<<line<<"\n";
                         abort();
                     }
                 }
-                std::string log_path = config_map.at("log.path");
-                std::string log_file = config_map.at("log.file");
-                std::string log_level_str = config_map.at("log.level");
-                std::string log_mode_str = config_map.at("log.mode");
+                std::string log_path = config_map["log.path"];
+                std::string log_file = config_map["log.file"];
+                std::string log_level_str = config_map["log.level"];
+                std::string log_mode_str = config_map["log.mode"];
+                std::string log_time = config_map["log.time"];
+                LOG_RATIO log_ratio{LOG_RATIO::MILLI};
                 LOG_LEVEL log_level{LOG_LEVEL::INFO};
                 LOG_MODE log_mode{LOG_MODE::BOTH};
                 if(!log_mode_str.empty()){
@@ -62,19 +65,30 @@ namespace nnero{
                         log_level = LOG_LEVEL::FATAL;
                     }
                 }
+                if(!log_time.empty()){
+                    if(log_time == "second"){
+                        log_ratio = LOG_RATIO::SECOND;
+                    } else if(log_time == "milli"){
+                        log_ratio = LOG_RATIO::MILLI;
+                    } else if(log_time == "micro"){
+                        log_ratio = LOG_RATIO::MIRCO;
+                    } else {
+                        std::cout<<"unknow config: log.time="<<log_time<<" so use default"<<std::endl;
+                        log_ratio = LOG_RATIO::MILLI;
+                    }
+                }
                 if((log_mode == LOG_MODE::BOTH or log_mode == LOG_MODE::FILE) and log_path.empty()){
                     std::cerr<<"log.path is not config. abort!\n";
                     abort();
-
                 }
                 if((log_mode == LOG_MODE::BOTH or log_mode == LOG_MODE::FILE) and log_file.empty()){
                     std::cerr<<"log.file is not config. abort!\n";
                     abort();
                 }
-                s_config_ptr.reset(new LogConfig(log_path,log_file,log_mode,log_level));
+                s_config_ptr.reset(new LogConfig(log_path,log_file,log_mode,log_level,log_ratio));
                 s_level = log_level;
             } else {
-                std::cerr<<"config file 'log_config.properties' is not found!\n";
+                std::cerr<<"config file: "<<file_path<<" is not found!\n";
                 abort();
             }
         }
@@ -90,8 +104,9 @@ Log::~Log(){
         std::cout<<str<<std::endl;
     }
     if(config.m_log_mode == LOG_MODE::FILE or config.m_log_mode == LOG_MODE::BOTH){
-        std::ostringstream os{config.m_log_path};
-        os << config.m_log_name << util::getToday() << ".log";
+        std::ostringstream os;
+        os <<config.m_log_path<< config.m_log_name << util::getToday() << ".log";
+        std::cout<<os.str()<<std::endl;
         m_fstream.open(os.str(), std::ios::app);
         m_fstream <<str<<std::endl;
         m_fstream.close();
@@ -120,7 +135,13 @@ std::ostringstream& Log::stream(){
         m_stream << "[FATAL ";
         break;
     }
-    m_stream << util::getNowMilliTime()<<" ";
+    if(m_log_confg_ptr->m_log_ratio == LOG_RATIO::MIRCO){
+        m_stream << util::getNowMicroTime()<<" ";
+    } else if(m_log_confg_ptr->m_log_ratio == LOG_RATIO::SECOND){
+        m_stream << util::getNowSecTime()<<" ";
+    } else {
+        m_stream << util::getNowMilliTime()<<" ";
+    }
     m_stream <<"<"<< std::this_thread::get_id() << ">";
     m_stream << m_file << "->" << m_func<< ":"<<m_line<<"]: ";
     return m_stream;
