@@ -106,7 +106,6 @@ Log::~Log(){
     if(config.m_log_mode == LOG_MODE::FILE or config.m_log_mode == LOG_MODE::BOTH){
         std::ostringstream os;
         os <<config.m_log_path<< config.m_log_name << util::getToday() << ".log";
-        std::cout<<os.str()<<std::endl;
         m_fstream.open(os.str(), std::ios::app);
         m_fstream <<str<<std::endl;
         m_fstream.close();
