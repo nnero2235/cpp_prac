@@ -1,12 +1,16 @@
 #include<gtest/gtest.h>
 #include"../nnero/util.hpp"
 #include"../nnero/logging.hpp"
+#include"../nnero/bqueue.hpp"
 #include<string>
 #include<iostream>
 #include<fstream>
 #include<thread>
 #include<vector>
 #include<algorithm>
+#include<exception>
+#include<stdexcept>
+#include<chrono>
 
 
 TEST(UTIL_TEST,time_test){
@@ -61,4 +65,98 @@ TEST(LOG_TEST,performance){
     LOG(WARN)<<"hello1";
     LOG(WARN)<<"hello1";
     LOG(WARN)<<"hello1";
+}
+
+TEST(BQUEUE_TEST,single_thread){
+    using namespace nnero::queue;
+    BlockingQueue<int> bqueue(5);
+    ASSERT_TRUE(bqueue.empty());
+    bqueue.put(std::make_shared<int>(5));
+    bqueue.put(std::make_shared<int>(1));
+    bqueue.put(std::make_shared<int>(3));
+    bqueue.put(std::make_shared<int>(10));
+    bqueue.put(std::make_shared<int>(9));
+    try{
+        bqueue.put(std::make_shared<int>(11));
+    }catch(std::runtime_error e){
+        ASSERT_STREQ(e.what(),"Blockingqueue is full. can't put a element");
+    }
+    ASSERT_EQ(bqueue.size(),5);
+    ASSERT_FALSE(bqueue.empty());
+    std::shared_ptr<int> p = bqueue.take();
+    ASSERT_EQ(*p,5);
+    ASSERT_EQ(bqueue.size(),4);
+    bqueue.poll();
+    bqueue.poll();
+    bqueue.poll();
+    bqueue.poll();
+    ASSERT_TRUE(bqueue.empty());
+    std::shared_ptr<int> p2;
+    bqueue.put(p2);
+    ASSERT_TRUE(bqueue.empty());
+    try{
+        bqueue.poll();
+    }catch(std::runtime_error e){
+        ASSERT_STREQ(e.what(),"BlockingQueue is empty. can't poll a element!");
+    }
+    bqueue.add(std::make_shared<int>(9));
+    bqueue.add(std::make_shared<int>(19));
+    bqueue.add(std::make_shared<int>(119));
+    bqueue.add(std::make_shared<int>(911));
+    bqueue.add(std::make_shared<int>(9111));
+    bool b = bqueue.add(std::make_shared<int>(100));
+    ASSERT_FALSE(b);
+    bqueue.get();
+    bqueue.get();
+    bqueue.get();
+    bqueue.get();
+    bqueue.get();
+    std::shared_ptr<int> n_ptr = bqueue.get();
+    ASSERT_FALSE(n_ptr);
+}
+
+TEST(BQUEUE_TEST,multi_thread){
+    using namespace nnero::queue;
+    BlockingQueue<int> bqueue(3);
+    bool exit = false;
+    auto productor = [&bqueue](){
+        std::chrono::seconds sec(2);
+        std::this_thread::sleep_for(sec);//wait 2s
+        bqueue.offer(std::make_shared<int>(10));
+        bqueue.offer(std::make_shared<int>(11));
+        bqueue.offer(std::make_shared<int>(12));
+        bqueue.offer(std::make_shared<int>(13));
+        bqueue.offer(std::make_shared<int>(14));
+        bqueue.offer(std::make_shared<int>(15));
+        bqueue.offer(std::make_shared<int>(16));
+        bqueue.offer(std::make_shared<int>(17));
+        bqueue.offer(std::make_shared<int>(18));
+        bqueue.offer(std::make_shared<int>(19));
+    };
+    auto customer1 = [&bqueue,&exit](){
+        while(!exit){
+            std::shared_ptr<int> ptr = bqueue.take();
+            ASSERT_TRUE(*ptr < 22);
+        }
+    };
+    auto customer2 = [&bqueue,&exit](){
+        while(!exit){
+            std::shared_ptr<int> ptr = bqueue.take();
+            ASSERT_TRUE(*ptr < 22);
+        }
+    };
+    auto commander = [&bqueue,&exit](){
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+        exit = true;
+        bqueue.offer(std::make_shared<int>(20));
+        bqueue.offer(std::make_shared<int>(21));
+    };
+    std::thread t1(productor);
+    std::thread t2(customer1);
+    std::thread t3(customer2);
+    std::thread t4(commander);
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
 }
