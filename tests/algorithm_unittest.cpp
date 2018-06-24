@@ -2,6 +2,7 @@
 #include<gtest/gtest.h>
 #include"../algorithm/sort.hpp"
 #include"../algorithm/search.hpp"
+#include"../algorithm/tree.hpp"
 #include<vector>
 #include<algorithm>
 #include<memory>
@@ -96,4 +97,26 @@ TEST(ALGORITHM,search){
     if(p1){
         std::cout<<*p1<<std::endl;        
     }
+}
+
+TEST(TREE,binary_tree){
+    using namespace nnero::tree;
+    BinaryTree<int> b_tree;
+    ASSERT_TRUE(b_tree.size() == 0);
+    b_tree.add(std::make_shared<int>(19));
+    b_tree.add(std::make_shared<int>(18));
+    b_tree.add(std::make_shared<int>(-1));
+    b_tree.add(std::make_shared<int>(-2));
+    b_tree.add(std::make_shared<int>(-3));
+    b_tree.add(std::make_shared<int>(8));
+    b_tree.add(std::make_shared<int>(79));
+    b_tree.add(std::make_shared<int>(66));
+    b_tree.add(std::make_shared<int>(100));
+    b_tree.add(std::make_shared<int>(5));
+    b_tree.add(std::make_shared<int>(9));
+    ASSERT_TRUE(b_tree.size() == 11);
+    std::shared_ptr<int> result = b_tree.search(100);
+    ASSERT_EQ(*result,100);
+    std::shared_ptr<int> r = b_tree.search(55);
+    ASSERT_FALSE(r);
 }
