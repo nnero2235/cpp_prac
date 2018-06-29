@@ -10,14 +10,13 @@ namespace nnero{
         template<typename T>
         class Node{
         public:
-            Node(std::shared_ptr<T> data_ptr):
-                m_data_ptr{std::move(data_ptr)}
-            {
-            }
-            std::shared_ptr<T> m_data_ptr;
-            std::shared_ptr<Node<T>> m_parent;
-            std::shared_ptr<Node<T>> m_left;
-            std::shared_ptr<Node<T>> m_right;
+            Node(const T& t):
+                m_data{t}
+            {}
+            T m_data;
+            Node* m_parent{nullptr};
+            Node* m_left{nullptr};
+            Node* m_right{nullptr};
         };
 
         /*
@@ -26,75 +25,200 @@ namespace nnero{
          */
         template<typename T>
         class BinaryTree{
-            friend class Node<T>;
         public:
             BinaryTree() = default;
-            ~BinaryTree() = default;
-            void add(std::shared_ptr<T> t){
+            ~BinaryTree(){
+                if(m_root){
+                    freeNode(m_root);
+                    m_size = 0;
+                }
+            }
+            void add(const T& t){
                 if(m_size == 0){
-                    m_root = std::make_shared<Node<T>>(new Node<T>(t));
+                    m_root = new Node<T>(t);
                     ++m_size;
                     return;
                 }
-                size_t counter(0);
-                std::shared_ptr<Node<T>> current_node = m_root;
+                Node<T>* current_node = m_root;
                 while(true){
-                    ++counter;
-                    if(*t > *(current_node->m_data_ptr)){
+                    if(t > current_node->m_data){
                         if(!current_node->m_right){
-                            current_node->m_right == std::make_shared<Node<T>>(new Node<T>(t));
+                            current_node->m_right = new Node<T>(t);
+                            current_node->m_right->m_parent = current_node;
                             ++m_size;
-                            break;
+                            return;
                         }
                         current_node = current_node->m_right;
-                    } else if(*(current_node->m_data_ptr) < *t){
+                    } else if(t < current_node->m_data){
                         if(!current_node->m_left){
-                            current_node->m_left == std::make_shared<Node<T>>(new Node<T>(t));
+                            current_node->m_left = new Node<T>(t);
+                            current_node->m_left->m_parent = current_node;
                             ++m_size;
-                            break;
+                            return;
                         }
                         current_node = current_node->m_left;
-                    } else {
-                        std::cout<<"error same value so omitted!"<<std::endl;
-                        break;
+                    } else{
+                        std::cout<<"not allow repeat values"<<std::endl;
+                        return;
                     }
                 }
-                std::cout<<"add count:"<<counter<<std::endl;
             }
 
-            std::shared_ptr<T>& search(const T& t){
-                if(m_size == 0 || m_size == 1){
-                    return m_root->m_data_ptr;
+            bool del(const T& t){
+                if(m_size == 0){
+                    return false;
                 }
-                size_t counter(0);
-                std::shared_ptr<Node<T>> current_node = m_root;
+                Node<T>* current_node = m_root;
                 while(true){
-                    ++counter;
-                    if(*(current_node->m_data_ptr) == t){
-                        break;
-                    } else if(*(current_node->m_data_ptr) > t){
+                    if(current_node->m_data == t){
+                        /*leaf point so delete directly*/
+                        if(current_node->m_left == nullptr && current_node->m_right == nullptr){
+                            Node<T>* parent = current_node->m_parent;
+                            if(parent){
+                                if(parent->m_left == current_node){
+                                    parent->m_left = nullptr;
+                                } else if(parent->m_right == current_node){
+                                    parent->m_right = nullptr;
+                                }
+                            } else {
+                                m_root = nullptr;
+                            }
+                            delete current_node;
+                        } else if(current_node->m_left == nullptr){
+                            Node<T>* parent = current_node->m_parent;
+                            if(parent){
+                                if(parent->m_left == current_node){
+                                    parent->m_left = current_node->m_right;
+                                } else if(parent->m_right == current_node){
+                                    parent->m_right = current_node->m_right;
+                                }
+                            } else {
+                                m_root = m_root->m_right;
+                                m_root->m_parent = nullptr;
+                            }
+                            delete current_node;
+                        } else if(current_node->m_right == nullptr){
+                            Node<T>* parent = current_node->m_parent;
+                            if(parent){
+                                if(parent->m_left == current_node){
+                                    parent->m_left = current_node->m_left;
+                                } else if(parent->m_right == current_node){
+                                    parent->m_right = current_node->m_left;
+                                }
+                            } else {
+                                m_root = m_root->m_left;
+                                m_root->m_parent = nullptr;
+                            }
+                            delete current_node;
+                        } else {
+                            Node<T>* target = current_node->m_right;
+                            while(target->m_left){
+                                target = target->m_left;
+                            }
+                            if(target->m_right){
+                                Node<T>* target_parent = target->m_parent;
+                                if(target_parent->m_left == target){
+                                    target_parent->m_left = target->m_right;
+                                } else {
+                                    target_parent->m_right = target->m_right;
+                                }
+                                target->m_right->m_parent = target_parent;
+                            } else {
+                                Node<T>* target_parent = target->m_parent;
+                                if(target_parent->m_left == target){
+                                    target_parent->m_left = nullptr;
+                                } else {
+                                    target_parent->m_right = nullptr;
+                                }
+                            }
+                            target->m_left = current_node->m_left;
+                            current_node->m_left->m_parent = target;
+                            target->m_right = current_node->m_right;
+                            current_node->m_right->m_parent = target;
+                            Node<T>* parent = current_node->m_parent;
+                            if(parent){
+                                if(parent->m_left == current_node){
+                                    parent->m_left = target;
+                                } else {
+                                    parent->m_right = target;
+                                }
+                                target->m_parent = parent;
+                            } else {
+                                target->m_parent = nullptr;
+                                m_root = target;
+                            }
+                            delete current_node;
+                        }
+                        --m_size;
+                        return true;
+                    } else if(t > current_node->m_data){
                         if(!current_node->m_right){
-                            break;
+                            return false;
                         }
                         current_node = current_node->m_right;
-                    } else if(*(current_node->m_data_ptr) < t){
+                    } else if(t < current_node->m_data){
                         if(!current_node->m_left){
-                            break;
+                            return false;
                         }
                         current_node = current_node->m_left;
-                    } else {
-                        std::cout<<"error can't reach"<<std::endl;
                     }
                 }
-                std::cout<<"search count:"<<counter<<std::endl;
-                return current_node->m_data_ptr;
+            }
+
+            bool search(const T& t){
+                if(m_size == 0){
+                    return false;
+                }
+                Node<T>* current_node = m_root;
+                size_t counter(0);
+                while(true){
+                    ++counter;
+                    if(current_node->m_data == t){
+                        std::cout<<"search count:"<<counter<<std::endl;
+                        return true;
+                    } else if(t > current_node->m_data){
+                        if(!current_node->m_right){
+                            std::cout<<"search count:"<<counter<<std::endl;
+                            return false;
+                        }
+                        current_node = current_node->m_right;
+                    } else if(t < current_node->m_data){
+                        if(!current_node->m_left){
+                            std::cout<<"search count:"<<counter<<std::endl;
+                            return false;
+                        }
+                        current_node = current_node->m_left;
+                    }
+                }
+            }
+
+            void travPrint(){
+                if(m_root){
+                    print(m_root);
+                }
             }
             
             size_t size()const{
                 return m_size;
             }
+
         private:
-            std::shared_ptr<Node<T>> m_root;
+            void print(Node<T>* node){
+                if(node){
+                    print(node->m_left);
+                    std::cout<<node->m_data<<std::endl;
+                    print(node->m_right);
+                }
+            }
+            
+            void freeNode(Node<T>* node){
+                if(node){
+                    freeNode(node->m_left);
+                    freeNode(node->m_right);
+                    delete node;
+                }
+            }
+            Node<T>* m_root;
             size_t m_size{0};
         };
     }

@@ -2,6 +2,8 @@
 #include"../nnero/util.hpp"
 #include"../nnero/logging.hpp"
 #include"../nnero/bqueue.hpp"
+#include"../nnero/thread_pool.hpp"
+#include"../nnero/nthread.hpp"
 #include<string>
 #include<iostream>
 #include<fstream>
@@ -11,6 +13,10 @@
 #include<exception>
 #include<stdexcept>
 #include<chrono>
+#include<memory>
+#include<functional>
+#include<atomic>
+
 
 
 TEST(UTIL_TEST,time_test){
@@ -69,7 +75,7 @@ TEST(LOG_TEST,performance){
 
 TEST(BQUEUE_TEST,single_thread){
     using namespace nnero::queue;
-    BlockingQueue<int> bqueue(5);
+    BlockingQueue<std::shared_ptr<int>> bqueue(5);
     ASSERT_TRUE(bqueue.empty());
     bqueue.put(std::make_shared<int>(5));
     bqueue.put(std::make_shared<int>(1));
@@ -91,9 +97,6 @@ TEST(BQUEUE_TEST,single_thread){
     bqueue.poll();
     bqueue.poll();
     ASSERT_TRUE(bqueue.empty());
-    std::shared_ptr<int> p2;
-    bqueue.put(p2);
-    ASSERT_TRUE(bqueue.empty());
     try{
         bqueue.poll();
     }catch(std::runtime_error e){
@@ -106,18 +109,11 @@ TEST(BQUEUE_TEST,single_thread){
     bqueue.add(std::make_shared<int>(9111));
     bool b = bqueue.add(std::make_shared<int>(100));
     ASSERT_FALSE(b);
-    bqueue.get();
-    bqueue.get();
-    bqueue.get();
-    bqueue.get();
-    bqueue.get();
-    std::shared_ptr<int> n_ptr = bqueue.get();
-    ASSERT_FALSE(n_ptr);
 }
 
 TEST(BQUEUE_TEST,multi_thread){
     using namespace nnero::queue;
-    BlockingQueue<int> bqueue(3);
+    BlockingQueue<std::shared_ptr<int>> bqueue(3);
     bool exit = false;
     auto productor = [&bqueue](){
         std::chrono::seconds sec(2);
@@ -160,3 +156,52 @@ TEST(BQUEUE_TEST,multi_thread){
     t3.join();
     t4.join();
 }
+
+TEST(THREAD_POOL,simple){
+    std::atomic<int> value(0);
+    auto func = [&value](){
+        std::cout<<"value is:"<<value<<std::endl;
+        ++value;
+    };
+    {
+        using namespace nnero::thread;
+        ThreadPool pool;
+        pool.execute(func);
+        pool.execute(func);
+        pool.execute(func);
+        pool.execute(func);
+    }
+    ASSERT_EQ(value,4);
+}
+
+TEST(NTHREAD,simple){
+    using namespace nnero::thread;
+    
+    std::atomic<int> value{0};
+    auto func = [&value](){
+        bool shutdown{false};
+        while(!shutdown){
+            try{
+                interruptPoint();
+                std::cout<<value<<std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                ++value;
+            } catch(InterruptException e){
+                std::cout<<e.what()<<std::endl;
+                shutdown=true;
+            }
+        }
+    };
+
+    std::vector<Nthread> threads;
+
+    threads.push_back(Nthread(func));
+    threads.push_back(Nthread(func));
+    threads.push_back(Nthread(func));
+
+    std::for_each(threads.begin(), threads.end(), [](Nthread& t){
+            t.interrupt();
+            t.join();
+        });
+}
+
