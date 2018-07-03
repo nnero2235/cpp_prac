@@ -7,12 +7,13 @@
 #include"util.hpp"
 #include<iostream>
 #include<map>
+#include<string.h>
 
 namespace nnero{
-
-    using namespace nnero;
     
     namespace logging{
+
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
         
         enum LOG_LEVEL{ 
             DEBUG,
@@ -103,7 +104,7 @@ namespace nnero{
         
         /*for outside use*/
 #define LOG(level) if(level >= s_level)                        \
-            Log(level,__LINE__,__PRETTY_FUNCTION__,__FILE__,s_config_ptr).stream()
+            Log(level,__LINE__,__FUNCTION__,__FILENAME__,s_config_ptr).stream()
     }
 }
 

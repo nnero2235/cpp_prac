@@ -3,10 +3,12 @@
 
 #include<thread>
 #include<exception>
+#include<stdexcept>
 #include<future>
 
 namespace nnero{
     namespace thread{
+
         /*
           this is for thread that can be interrupt
           when thread was waiting.
@@ -45,15 +47,10 @@ namespace nnero{
             }
         };
 
-        /*
-          condition variable enhanced for waiting interrupted;
-         */
-        class NConditionVariable;
-        
         class Nthread{
         public:
-            template<typename Func>
-            Nthread(const Func& func){
+            template<typename FUNC>
+            Nthread(FUNC func){
                 std::promise<InterruptFlag*> p;
                 m_thread = std::thread([func,&p](){
                         p.set_value(&interrupt_flag);
@@ -61,13 +58,14 @@ namespace nnero{
                     });
                 m_interrupt_flag = p.get_future().get();
             }
+            //can't be copy
             Nthread(const Nthread& t) = delete;
             Nthread& operator=(const Nthread& t) = delete;
 
+            //should be move
             Nthread(Nthread&& other){
                 *this = std::move(other);
             }
-
             Nthread& operator=(Nthread&& other){
                 if(this != &other){
                     this->m_interrupt_flag = other.m_interrupt_flag;
@@ -77,7 +75,7 @@ namespace nnero{
                 }
                 return *this;
             }
-            
+
             bool isInterrupted(){
                 return m_interrupt_flag->get();
             }
@@ -96,8 +94,10 @@ namespace nnero{
                 m_thread.join();
             }
         private:
+            std::function<void()> m_func;
             InterruptFlag* m_interrupt_flag;
             std::thread m_thread;
+            
         };
 
         static void interruptPoint(){

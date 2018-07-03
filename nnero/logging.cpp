@@ -11,7 +11,8 @@ using namespace nnero::logging;
 
 namespace nnero{
     namespace logging{
-        std::shared_ptr<LogConfig> s_config_ptr;
+        std::shared_ptr<LogConfig> s_config_ptr = std::make_shared<LogConfig>("","",LOG_MODE::CONSOLE,LOG_LEVEL::INFO,LOG_RATIO::MIRCO);
+        
         LOG_LEVEL s_level{LOG_LEVEL::INFO};
 
         void logInit(const std::string& log_path,const std::string& log_name,
@@ -98,16 +99,17 @@ namespace nnero{
 
 /*this is the point*/
 Log::~Log(){
+    m_stream<<'\n';
     std::string str = m_stream.str();
     LogConfig& config = *m_log_confg_ptr;
     if(config.m_log_mode == LOG_MODE::CONSOLE or config.m_log_mode == LOG_MODE::BOTH){
-        std::cout<<str<<std::endl;
+        std::cerr<<str;
     }
     if(config.m_log_mode == LOG_MODE::FILE or config.m_log_mode == LOG_MODE::BOTH){
         std::ostringstream os;
         os <<config.m_log_path<< config.m_log_name << util::getToday() << ".log";
         m_fstream.open(os.str(), std::ios::app);
-        m_fstream <<str<<std::endl;
+        m_fstream <<str;
         m_fstream.close();
     }
 }
@@ -141,7 +143,7 @@ std::ostringstream& Log::stream(){
     } else {
         m_stream << util::getNowMilliTime()<<" ";
     }
-    m_stream <<"<"<< std::this_thread::get_id() << ">";
+    m_stream <<"<"<< std::this_thread::get_id() << "> ";
     m_stream << m_file << "->" << m_func<< ":"<<m_line<<"]: ";
     return m_stream;
 }

@@ -12,9 +12,7 @@
 namespace nnero{
     namespace queue{
 
-        /**
-           blocking queue for thread safe
-         */
+        //blocking queue for thread safe
         template<typename T>
         class BlockingQueue{
         public:
@@ -35,7 +33,7 @@ namespace nnero{
                 return m_inner_queue.size();
             }
             
-            /*throw runtime_exception when queue is empty*/
+            //throw runtime_exception when queue is empty
             T poll(){
                 std::lock_guard<std::mutex> lock(m_mutex);
                 if(m_inner_queue.empty()){
@@ -46,7 +44,7 @@ namespace nnero{
                 m_full_cond.notify_one();
                 return std::move(ptr);
             }
-            /*blocking when queue is empty*/
+            //blocking when queue is empty
             T take(){ 
                 std::unique_lock<std::mutex> lock(m_mutex);
                 m_empty_cond.wait(lock,[this](){
@@ -58,7 +56,7 @@ namespace nnero{
                 m_full_cond.notify_one();
                 return std::move(ptr);
             }
-            /*return false when queue is full*/
+            //return false when queue is full
             bool add(const T& t){
                 std::lock_guard<std::mutex> lock(m_mutex);
                 if(m_inner_queue.size() == m_max){
@@ -69,7 +67,7 @@ namespace nnero{
                 return true;
             }
             
-            /*throw runtime_error when queue is full*/
+            //throw runtime_error when queue is full
             void put(const T& t){
                 std::lock_guard<std::mutex> lock(m_mutex);
                 if(m_inner_queue.size() == m_max){
@@ -78,7 +76,7 @@ namespace nnero{
                 m_inner_queue.push(std::move(t));
                 m_empty_cond.notify_one();
             }
-            /*blocking when queue is full that decided m_max's value*/
+            //blocking when queue is full that decided m_max's value
             void offer(const T& t){ 
                 std::unique_lock<std::mutex> lock(m_mutex);
                 m_full_cond.wait(lock,[this](){
@@ -89,7 +87,7 @@ namespace nnero{
                 m_empty_cond.notify_one();
             }
 
-            /*wake up all threads to check condition. that is only use for interrupt*/
+            //wake up all threads to check condition. that should be only used for interrupt.
             void wakeUpAll(){
                 m_empty_cond.notify_all();
                 m_full_cond.notify_all();

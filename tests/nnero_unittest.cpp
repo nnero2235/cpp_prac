@@ -158,20 +158,20 @@ TEST(BQUEUE_TEST,multi_thread){
 }
 
 TEST(THREAD_POOL,simple){
+    using namespace nnero::logging;
     std::atomic<int> value(0);
     auto func = [&value](){
-        std::cout<<"value is:"<<value<<std::endl;
+        LOG(INFO)<<"value is:"<<value;
         ++value;
     };
     {
         using namespace nnero::thread;
         ThreadPool pool;
-        pool.execute(func);
-        pool.execute(func);
-        pool.execute(func);
-        pool.execute(func);
+        for(int i=0;i<30;++i){
+            pool.execute(func);
+        }
     }
-    ASSERT_EQ(value,4);
+    ASSERT_EQ(value,30);
 }
 
 TEST(NTHREAD,simple){
@@ -186,7 +186,7 @@ TEST(NTHREAD,simple){
                 std::cout<<value<<std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 ++value;
-            } catch(InterruptException e){
+            } catch(InterruptException& e){
                 std::cout<<e.what()<<std::endl;
                 shutdown=true;
             }
@@ -195,9 +195,10 @@ TEST(NTHREAD,simple){
 
     std::vector<Nthread> threads;
 
-    threads.push_back(Nthread(func));
-    threads.push_back(Nthread(func));
-    threads.push_back(Nthread(func));
+    for(int i=0;i<5;++i){
+        Nthread t(func);
+        threads.push_back(std::move(t));
+    }
 
     std::for_each(threads.begin(), threads.end(), [](Nthread& t){
             t.interrupt();
