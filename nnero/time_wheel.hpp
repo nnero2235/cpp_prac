@@ -57,7 +57,7 @@ namespace nnero{
         class TimeWheel{
             //MIN Time unit 1ms
             //it means 1ms to check the task 
-            static constexpr unsigned short MIN_UNIT=1;
+            static constexpr unsigned short MIN_UNIT=10;
         public:
             TimeWheel(){
                 for(int i=0;i<10;++i){
@@ -76,15 +76,14 @@ namespace nnero{
             //delay_time is milli seconds
             template<typename FUNC>
             void addTask(FUNC f,const long& delay_time){
-                if(delay_time <= 0){
+                if(delay_time <= 10){
                     auto task_list = m_time_box[m_curr_index+1];
                     task_list->push_back(TimeTask(f,0));
                 } else {
                     int execute_unit = delay_time/MIN_UNIT + m_curr_index;
                     int slot = execute_unit % m_time_box.size();
-                    int rotation = delay_time / m_time_box.size();
-                    LOG(INFO)<<"slot :"<<slot;
-                    LOG(INFO)<<"rotation :"<<rotation;
+                    int rotation = delay_time/ MIN_UNIT / m_time_box.size();
+                    LOG(INFO)<<"slot :"<<slot<<" rotation:"<<rotation;
                     TimeTask task(f,rotation);
                     auto task_list = m_time_box[slot];
                     task_list->push_back(task);

@@ -5,10 +5,11 @@
 #include<exception>
 #include<stdexcept>
 #include<future>
+#include"logging.hpp"
 
 namespace nnero{
     namespace thread{
-
+        using namespace nnero::logging;
         /*
           this is for thread that can be interrupt
           when thread was waiting.
@@ -22,8 +23,15 @@ namespace nnero{
             void set(){
                 m_flag = true;
             }
+            void setName(const std::string& name){
+                m_name = name;
+            }
+            std::string& getName(){
+                return m_name;
+            }
         private:
             bool m_flag{false};
+            std::string m_name{"thread"};
         };
         
         thread_local InterruptFlag interrupt_flag;
@@ -42,21 +50,34 @@ namespace nnero{
          */
         class InterruptException:public std::exception{
         public:
-            const char* what()const throw(){
-                return "Thread is interrputed";
+            InterruptException(const std::string& name)
+            {
+                m_msg = name + " is interrupted";
             }
+            const char* what()const throw(){
+                return m_msg.c_str();
+            }
+        private:
+            std::string m_msg;
         };
 
         class Nthread{
         public:
-            template<typename FUNC>
-            Nthread(FUNC func){
+            Nthread(std::function<void()> func,const std::string& name):
+                m_name{name}
+            {
                 std::promise<InterruptFlag*> p;
-                m_thread = std::thread([func,&p](){
-                        p.set_value(&interrupt_flag);
-                        func();
+                m_thread = std::thread([func,&p,this](){
+                        try{
+                            p.set_value(&interrupt_flag);
+                            func();
+                        } catch (const std::exception& e){
+                            LOG(ERROR)<<"crash in thread:"<<m_name<<" :"<<e.what();
+                            abort();
+                        }
                     });
                 m_interrupt_flag = p.get_future().get();
+                m_interrupt_flag->setName(name);
             }
             //can't be copy
             Nthread(const Nthread& t) = delete;
@@ -95,16 +116,18 @@ namespace nnero{
                     m_thread.join();
                 }
             }
+            std::string& getName(){
+                return m_name;
+            }
         private:
-            std::function<void()> m_func;
             InterruptFlag* m_interrupt_flag;
+            std::string m_name{"nthread"};
             std::thread m_thread;
-            
         };
 
         static void interruptPoint(){
             if(interrupt_flag.get()){
-                throw InterruptException();
+                throw InterruptException(interrupt_flag.getName());
             }
         }
     }

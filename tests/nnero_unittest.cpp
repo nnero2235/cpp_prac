@@ -197,7 +197,7 @@ TEST(NTHREAD,simple){
     std::vector<Nthread> threads;
 
     for(int i=0;i<5;++i){
-        Nthread t(func);
+        Nthread t(func,"thread-"+std::to_string(i));
         threads.push_back(std::move(t));
     }
 
@@ -217,12 +217,14 @@ TEST(TIME_WHEEL,simple){
     TimeWheel tw;
     tw.startTick();
 
-    for(int i=0;i<100;++i){
-        tw.addTask(f, 1000);
-    }
+    tw.addTask(f, 1000);
     tw.addTask(f, 2000);
 
     std::this_thread::sleep_for(std::chrono::seconds(5));
+
+    tw.addTask(f,59 * 1000);
+    std::this_thread::sleep_for(std::chrono::seconds(61));
+        
     ASSERT_EQ(value,3);
 }
 

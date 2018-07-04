@@ -86,7 +86,7 @@ namespace nnero{
                 if(m_worker_cnt < m_core_size){
                     ++m_worker_cnt;
                     auto f = std::bind(&ThreadPool::runWorker,this);
-                    m_threads.push_back(Nthread(f));
+                    m_threads.push_back(Nthread(f,"thread-pool-"+std::to_string(m_worker_cnt)));
                 } 
             }
         private:
@@ -96,8 +96,8 @@ namespace nnero{
                         auto task = getTask();
                         task();
                     }
-                }catch (InterruptException e){
-                    LOG(INFO)<<"thread was interrupted.so exit.";
+                }catch (const InterruptException& e){
+                    LOG(WARN)<<e.what()<<" so exit";
                 }
                 //do finish worker with queue.
                 runWithExit();
@@ -115,7 +115,7 @@ namespace nnero{
                         auto task = m_task_queue.poll();
                         task();
                     }
-                } catch (std::runtime_error& e){
+                } catch (const std::runtime_error& e){
                     LOG(INFO)<<"empty queue";
                 }
             }
