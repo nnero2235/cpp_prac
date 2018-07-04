@@ -91,7 +91,9 @@ namespace nnero{
                 return m_thread.joinable();
             }
             void join(){
-                m_thread.join();
+                if(m_thread.joinable()){
+                    m_thread.join();
+                }
             }
         private:
             std::function<void()> m_func;

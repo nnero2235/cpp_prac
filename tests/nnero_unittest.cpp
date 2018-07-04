@@ -4,6 +4,7 @@
 #include"../nnero/bqueue.hpp"
 #include"../nnero/thread_pool.hpp"
 #include"../nnero/nthread.hpp"
+#include"../nnero/time_wheel.hpp"
 #include<string>
 #include<iostream>
 #include<fstream>
@@ -205,4 +206,25 @@ TEST(NTHREAD,simple){
             t.join();
         });
 }
+
+TEST(TIME_WHEEL,simple){
+    using namespace nnero::time;
+    std::atomic<int> value{0};
+    auto f = [&value](){
+        LOG(INFO)<<value;
+        ++value;
+    };
+    TimeWheel tw;
+    tw.startTick();
+
+    for(int i=0;i<100;++i){
+        tw.addTask(f, 1000);
+    }
+    tw.addTask(f, 2000);
+
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    ASSERT_EQ(value,3);
+}
+
+
 
