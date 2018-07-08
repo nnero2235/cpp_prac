@@ -10,7 +10,6 @@
 #include<string.h>
 
 namespace nnero{
-    
     namespace logging{
 
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
@@ -100,7 +99,7 @@ namespace nnero{
               log.level=info
               log.mode=all
         */
-        extern void logInit(std::string file_path);
+        extern void logInit(const std::string& file_path);
         
         /*for outside use*/
 #define LOG(level) if(level >= s_level)                        \

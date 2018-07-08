@@ -5,6 +5,7 @@
 
 namespace nnero{
     namespace util{
+        //time utils
         extern std::string getNowMicroTime();
         extern std::string getNowMilliTime();
         extern std::string getNowSecTime();

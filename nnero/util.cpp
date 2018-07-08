@@ -8,6 +8,10 @@
 
 namespace nnero{
     namespace util{
+
+        //FIXME: replace ostringstream
+        //FIXME: do not use std::put_time
+        
         //get yyyy-MM-dd HH:mm:ss.z like date string
         std::string getNowMicroTime(){
             using namespace std::chrono;

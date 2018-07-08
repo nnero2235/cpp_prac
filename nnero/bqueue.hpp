@@ -39,10 +39,10 @@ namespace nnero{
                 if(m_inner_queue.empty()){
                     throw std::runtime_error("BlockingQueue is empty. can't poll a element!");
                 }
-                T& ptr = m_inner_queue.front();
+                T ptr = m_inner_queue.front();
                 m_inner_queue.pop();
                 m_full_cond.notify_one();
-                return std::move(ptr);
+                return ptr;
             }
             //blocking when queue is empty
             T take(){ 
@@ -51,10 +51,10 @@ namespace nnero{
                         nnero::thread::interruptPoint();
                         return !m_inner_queue.empty();
                 });
-                T& ptr = m_inner_queue.front();
+                T ptr = m_inner_queue.front();
                 m_inner_queue.pop();
                 m_full_cond.notify_one();
-                return std::move(ptr);
+                return ptr;
             }
             //return false when queue is full
             bool add(const T& t){
@@ -62,7 +62,7 @@ namespace nnero{
                 if(m_inner_queue.size() == m_max){
                     return false;
                 }
-                m_inner_queue.push(std::move(t));
+                m_inner_queue.push(t);
                 m_empty_cond.notify_one();
                 return true;
             }
@@ -73,7 +73,7 @@ namespace nnero{
                 if(m_inner_queue.size() == m_max){
                     throw std::runtime_error("Blockingqueue is full. can't put a element");
                 }
-                m_inner_queue.push(std::move(t));
+                m_inner_queue.push(t);
                 m_empty_cond.notify_one();
             }
             //blocking when queue is full that decided m_max's value
@@ -83,7 +83,7 @@ namespace nnero{
                         nnero::thread::interruptPoint();
                         return m_inner_queue.size() < m_max;
                 });
-                m_inner_queue.push(std::move(t));
+                m_inner_queue.push(t);
                 m_empty_cond.notify_one();
             }
 

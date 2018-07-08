@@ -21,7 +21,7 @@ namespace nnero{
             s_level = log_level;
         }
 
-        void logInit(std::string file_path){
+        void logInit(const std::string& file_path){
             std::ifstream ifs(file_path);
             if(ifs.is_open()){
                 std::string line;
