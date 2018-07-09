@@ -33,9 +33,16 @@ void EventLoop::loop(){
     }
     m_looping = true;
 
-    //do nothing
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-    
-    LOG(INFO)<<"exit loop";
+    while(!m_quit){
+        
+    }
+
     m_looping = false;
+    LOG(INFO)<<"exit loop";
+}
+
+void EventLoop::quit(){
+    if(!m_quit){
+        m_quit = true;
+    }
 }

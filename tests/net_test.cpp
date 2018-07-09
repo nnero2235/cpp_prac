@@ -2,6 +2,7 @@
 #include<gtest/gtest.h>
 #include"../nnero/logging.hpp"
 #include"../network/event_loop.hpp"
+#include"../network/tcp_connection.hpp"
 #include<thread>
 #include<stdexcept>
 

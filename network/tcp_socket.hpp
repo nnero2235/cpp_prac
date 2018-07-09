@@ -61,8 +61,11 @@ namespace nnero{
             //if socket is not listened or connected,do nothing.
             void close();
 
+            void shutdownRead();
+            void shutdownWrite();
+
             int getSocketFD()const;
-            InetAdress getAdress()const;
+            const InetAdress& getAdress()const;
             bool isConnected()const;
             bool isListened()const;
         private:

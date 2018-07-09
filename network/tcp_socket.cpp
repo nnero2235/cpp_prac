@@ -68,7 +68,7 @@ TCPSocket::TCPSocket(const int& fd,const struct sockaddr_in& raw_addr):
 {}
 
 TCPSocket::TCPSocket(TCPSocket&& sock):
-    m_addr{0}
+    m_addr{sock.getAdress()}
 {
     *this = std::move(sock);
 }
@@ -77,6 +77,8 @@ TCPSocket& TCPSocket::operator=(TCPSocket&& sock){
     if(this != &sock){
         this->m_addr = sock.m_addr;
         this->m_fd = sock.m_fd;
+        this->m_is_listened = sock.m_is_listened;
+        this->m_is_connected = sock.m_is_connected;
     }
     return *this;
 }
@@ -184,7 +186,7 @@ void TCPSocket::close(){
 int TCPSocket::getSocketFD()const{
     return m_fd;
 }
-InetAdress TCPSocket::getAdress()const{
+const InetAdress& TCPSocket::getAdress()const{
     return m_addr;
 }
 bool TCPSocket::isConnected()const{
@@ -192,6 +194,18 @@ bool TCPSocket::isConnected()const{
 }
 bool TCPSocket::isListened()const{
     return m_is_listened;
+}
+
+void TCPSocket::shutdownRead(){
+    if(m_is_connected){
+        ::shutdown(m_fd, SHUT_RD);
+    }
+}
+
+void TCPSocket::shutdownWrite(){
+    if(m_is_connected){
+        ::shutdown(m_fd, SHUT_WR);
+    }
 }
 
 

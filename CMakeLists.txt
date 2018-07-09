@@ -3,4 +3,4 @@ cmake_minimum_required (VERSION 2.8)
 PROJECT (cpp_prac)
 # sub module
 ADD_SUBDIRECTORY(tests)
-#ADD_SUBDIRECTORY(network)
+ADD_SUBDIRECTORY(network)

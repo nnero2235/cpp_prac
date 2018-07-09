@@ -2,6 +2,7 @@
 #define EVENT_LOOP_NNERO_HPP
 
 #include<thread>
+#include<atomic>
 
 namespace nnero{
     namespace net{
@@ -24,9 +25,12 @@ namespace nnero{
             //loop event
             //check whether is in create thread
             void loop();
-            
+
+            //quit loop
+            void quit();
         private:
-            bool m_looping;
+            std::atomic<bool> m_looping;
+            std::atomic<bool> m_quit;
             std::thread::id m_thread_id;
         };
     }
