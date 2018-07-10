@@ -8,7 +8,8 @@ thread_local nnero::net::EventLoop* loop_ptr{nullptr};
 using namespace nnero::logging;
 using namespace nnero::net;
 
-EventLoop::EventLoop():
+EventLoop::EventLoop(TCPServer& server):
+    m_tcp_server{server},
     m_looping{false},
     m_thread_id{std::this_thread::get_id()}
 {
@@ -34,7 +35,7 @@ void EventLoop::loop(){
     m_looping = true;
 
     while(!m_quit){
-        
+        m_tcp_server.handleEvent();
     }
 
     m_looping = false;

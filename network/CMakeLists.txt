@@ -6,7 +6,7 @@ AUX_SOURCE_DIRECTORY(../nnero NNERO_SRC)
 AUX_SOURCE_DIRECTORY(../network NET_SRC)
 
 # generate exec file with sources
-ADD_EXECUTABLE(server server.cpp tcp_connection.cpp tcp_server.cpp tcp_socket.cpp ${NNERO_SRC})
+ADD_EXECUTABLE(server server.cpp poller.cpp event_loop.cpp tcp_connection.cpp tcp_server.cpp tcp_socket.cpp ${NNERO_SRC})
 ADD_EXECUTABLE(client client.cpp tcp_connection.cpp tcp_socket.cpp ${NNERO_SRC})
 
 

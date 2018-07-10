@@ -3,6 +3,7 @@
 
 #include<thread>
 #include<atomic>
+#include"tcp_server.hpp"
 
 namespace nnero{
     namespace net{
@@ -14,7 +15,7 @@ namespace nnero{
 
         class EventLoop{
         public:
-            EventLoop();
+            EventLoop(TCPServer& server);
             //can't copy and move
             EventLoop(const EventLoop&) = delete;
             EventLoop& operator=(const EventLoop&) = delete;
@@ -29,6 +30,7 @@ namespace nnero{
             //quit loop
             void quit();
         private:
+            TCPServer& m_tcp_server;
             std::atomic<bool> m_looping;
             std::atomic<bool> m_quit;
             std::thread::id m_thread_id;
