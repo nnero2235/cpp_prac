@@ -25,7 +25,10 @@ namespace nnero{
         class TCPServer{
         public:
             static const int MAX_CLIENTS = 3;
-            TCPServer(const unsigned int& port,const std::function<void(TCPConnection*)>& read_callback,const std::function<void(TCPConnection*)>& write_callback);
+            TCPServer(const unsigned int& port,
+                      const std::function<void(TCPConnection*)>& read_callback,
+                      const std::function<void(TCPConnection*)>& write_callback,
+                      const std::function<void(TCPConnection*)>& connected_callback) ;
             //can't be copy and move
             TCPServer(const TCPServer&) = delete;
             TCPServer(TCPServer&&) = delete;
@@ -49,6 +52,7 @@ namespace nnero{
             mutable std::mutex m_main_lock;
             std::function<void(TCPConnection*)> m_read_callback;
             std::function<void(TCPConnection*)> m_write_callback;
+            std::function<void(TCPConnection*)> m_connected_callback;
             PollImpl m_poller;
         };
     }

@@ -5,10 +5,14 @@ using namespace nnero::logging;
 
 namespace nnero{
     namespace net{
-        TCPServer::TCPServer(const unsigned int& port,const std::function<void(TCPConnection*)>& read_callback,const std::function<void(TCPConnection*)>& write_callback):
+        TCPServer::TCPServer(const unsigned int& port,
+                             const std::function<void(TCPConnection*)>& read_callback,
+                             const std::function<void(TCPConnection*)>& write_callback,
+                             const std::function<void(TCPConnection*)>& connected_callback):
             m_server_socket{port},
             m_read_callback{read_callback},
-            m_write_callback{write_callback}
+            m_write_callback{write_callback},
+            m_connected_callback{connected_callback}
         {}
 
         TCPServer::~TCPServer(){
@@ -46,14 +50,21 @@ namespace nnero{
                             int fd = client.getSocketFD();
                             std::shared_ptr<TCPConnection> conn = newConnection(client);
                             m_connection_map[fd] = conn;
+                            if(m_connected_callback){
+                                m_connected_callback(conn.get());
+                            }
                             m_poller.registerSocket(client);
                             LOG(INFO)<<"connection from "<<conn->getIp()<<":"<<conn->getPort();
                         }
                     } else {
-                        m_read_callback(m_connection_map[begin->first].get());
+                        if(m_read_callback){
+                            m_read_callback(m_connection_map[begin->first].get());
+                        }
                     }
                 } else if(begin->second == IO_STATE::WRITE){
-                    m_write_callback(m_connection_map[begin->first].get());
+                    if(m_write_callback){
+                        m_write_callback(m_connection_map[begin->first].get());
+                    }
                 } else {
                     std::lock_guard<std::mutex> lock(m_main_lock);
                     --m_current_clients;
