@@ -4,3 +4,4 @@ PROJECT (cpp_prac)
 # sub module
 ADD_SUBDIRECTORY(tests)
 ADD_SUBDIRECTORY(network)
+ADD_SUBDIRECTORY(fltk_prac)
