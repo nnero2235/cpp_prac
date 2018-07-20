@@ -115,7 +115,6 @@ int main(){
     //interest listen socket when a socket want to connect.
     fd_arr[0].fd = sock_fd;
     fd_arr[0].events = POLLIN|POLLERR;
-
     int n_ready = 0;
     while(true){
         n_ready = ::poll(fd_arr,POLL_MAX,POLL_TIMEOUT);
