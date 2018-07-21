@@ -8,9 +8,11 @@ find_package(SDL2 REQUIRED)
 include_directories(SDL2Test ${SDL2_INCLUDE_DIRS})
 find_package(SDL2_image REQUIRED)
 include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
+find_package(SDL2_ttf REQUIRED)
+include_directories(${SDL2_TTF_INCLUDE_DIRS})
 
 # generate exec file with sources
-ADD_EXECUTABLE(game1 move_cure.cpp ${NNERO_SRC})
+ADD_EXECUTABLE(game1 snake.cpp ${NNERO_SRC})
 
 # add needed libs 
-TARGET_LINK_LIBRARIES(game1 ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES})
+TARGET_LINK_LIBRARIES(game1 ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_TTF_LIBRARIES})
